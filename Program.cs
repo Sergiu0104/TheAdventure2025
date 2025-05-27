@@ -8,7 +8,7 @@ public static class Program
     public static void Main()
     {
         var sdl = new Sdl(new SdlContext());
-
+        SoundManager.InitAudio();
         var sdlInitResult = sdl.Init(Sdl.InitVideo | Sdl.InitAudio | Sdl.InitEvents | Sdl.InitTimer |
                                      Sdl.InitGamecontroller |
                                      Sdl.InitJoystick);

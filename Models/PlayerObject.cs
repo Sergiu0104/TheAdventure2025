@@ -1,49 +1,58 @@
-using Silk.NET.Maths;
+using System;
+using System.Numerics;
 
-namespace TheAdventure.Models;
-
-public class PlayerObject : GameObject
+namespace TheAdventure
 {
-    public int X { get; set; } = 100;
-    public int Y { get; set; } = 100;
-
-    private Rectangle<int> _source = new(0, 0, 48, 48);
-    private Rectangle<int> _target = new(0, 0, 48, 48);
-
-    private readonly int _textureId;
-
-    private const int Speed = 128; // pixels per second
-
-    public PlayerObject(GameRenderer renderer)
+    public class PlayerObject
     {
-        _textureId = renderer.LoadTexture(Path.Combine("Assets", "player.png"), out _);
-        if (_textureId < 0)
+        private readonly GameRenderer _renderer;
+        public int X { get; private set; }
+        public int Y { get; private set; }
+
+        private float _velY;
+        private bool _isGrounded;
+        private const float Gravity = -20f;
+        private const float JumpVelocity = 8f;
+        private const float MoveSpeed = 100f;
+        private const int GroundY = 0;
+
+        public PlayerObject(GameRenderer renderer)
         {
-            throw new Exception("Failed to load player texture");
+            _renderer = renderer;
+            X = 0; Y = GroundY;
+            _velY = 0;
+            _isGrounded = true;
         }
 
-        UpdateTarget();
-    }
+        public void ResetPosition()
+        {
+            X = 0; Y = GroundY;
+            _velY = 0; _isGrounded = true;
+        }
 
-    public void UpdatePosition(double up, double down, double left, double right, int time)
-    {
-        var pixelsToMove = Speed * (time / 1000.0);
+        public void UpdatePosition(double up, double down, double left, double right, int dt)
+        {
+            float delta = dt / 1000f;
+            X = (int)(X + ((float)right - (float)left) * MoveSpeed * delta);
+            if (up > 0 && _isGrounded)
+            {
+                _velY = JumpVelocity;
+                _isGrounded = false;
+            }
+            _velY += Gravity * delta;
+            Y = (int)(Y + _velY * delta);
+            if (Y < GroundY)
+            {
+                Y = GroundY;
+                _velY = 0;
+                _isGrounded = true;
+            }
+        }
 
-        Y -= (int)(pixelsToMove * up);
-        Y += (int)(pixelsToMove * down);
-        X -= (int)(pixelsToMove * left);
-        X += (int)(pixelsToMove * right);
-
-        UpdateTarget();
-    }
-
-    public void Render(GameRenderer renderer)
-    {
-        renderer.RenderTexture(_textureId, _source, _target);
-    }
-
-    private void UpdateTarget()
-    {
-        _target = new(X + 24, Y - 42, 48, 48);
+        public void Render(GameRenderer renderer)
+        {
+            var tilePos = new Vector2(X / 32f, Y / 32f);
+            renderer.DrawCircle(tilePos, 0.4f, new Vector3(0f, 1f, 0f));
+        }
     }
 }

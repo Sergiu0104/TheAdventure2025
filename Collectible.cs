@@ -1,34 +1,33 @@
+// File: Collectible.cs
 using System;
 using System.Numerics;
+using System.Media;
 
-public class Collectible
+namespace TheAdventure
 {
-    public Vector2 Position { get; private set; }
-    public float Radius { get; private set; } = 0.2f;
-    public bool Collected { get; private set; } = false;
-
-    public Collectible(Vector2 position)
+    public class Collectible
     {
-        Position = position;
-    }
+        public Vector2 Position { get; }
+        public float Radius { get; } = 0.2f;
+        public bool Collected { get; private set; }
 
-    public void CheckCollision(Vector2 playerPosition, float playerRadius)
-    {
-        float distance = Vector2.Distance(Position, playerPosition);
-        Console.WriteLine($"Distanta pana la moneda: {distance}, limita: {Radius + playerRadius}");
+        public Collectible(Vector2 pos)
+        {
+            Position = pos;
+            Collected = false;
+        }
 
-        if (distance < Radius + playerRadius && !Collected)
+        public void Draw(Action<Vector2, float> draw)
+        {
+            if (!Collected)
+                draw(Position, Radius);
+        }
+
+        public void Collect()
         {
             Collected = true;
-            Console.WriteLine("Moneda colectata!");
-        }
-    }
-
-    public void Draw(Action<Vector2, float> drawAction)
-    {
-        if (!Collected)
-        {
-            drawAction(Position, Radius);
+            using var sp = new SoundPlayer("Assets/coin.wav");
+            sp.Play();
         }
     }
 }
