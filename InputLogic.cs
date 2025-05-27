@@ -5,6 +5,8 @@ namespace TheAdventure;
 public unsafe class InputLogic
 {
     private Sdl _sdl;
+    private bool _clickDetected = false;
+    private int _clickX = 0, _clickY = 0;
 
     public InputLogic(Sdl sdl)
     {
@@ -13,8 +15,6 @@ public unsafe class InputLogic
 
     public bool ProcessInput()
     {
-        ReadOnlySpan<byte> _keyboardState = new(_sdl.GetKeyboardState(null), (int)KeyCode.Count);
-        Span<byte> mouseButtonStates = stackalloc byte[(int)MouseButton.Count];
         Event ev = new Event();
         while (_sdl.PollEvent(ref ev) != 0)
         {
@@ -23,110 +23,18 @@ public unsafe class InputLogic
                 return true;
             }
 
-            switch (ev.Type)
+            if (ev.Type == (uint)EventType.Mousebuttondown &&
+                ev.Button.Button == (byte)MouseButton.Primary)
             {
-                case (uint)EventType.Windowevent:
-                {
-                    switch (ev.Window.Event)
-                    {
-                        case (byte)WindowEventID.Shown:
-                        case (byte)WindowEventID.Exposed:
-                        {
-                            break;
-                        }
-                        case (byte)WindowEventID.Hidden:
-                        {
-                            break;
-                        }
-                        case (byte)WindowEventID.Moved:
-                        {
-                            break;
-                        }
-                        case (byte)WindowEventID.SizeChanged:
-                        {
-                            break;
-                        }
-                        case (byte)WindowEventID.Minimized:
-                        case (byte)WindowEventID.Maximized:
-                        case (byte)WindowEventID.Restored:
-                            break;
-                        case (byte)WindowEventID.Enter:
-                        {
-                            break;
-                        }
-                        case (byte)WindowEventID.Leave:
-                        {
-                            break;
-                        }
-                        case (byte)WindowEventID.FocusGained:
-                        {
-                            break;
-                        }
-                        case (byte)WindowEventID.FocusLost:
-                        {
-                            break;
-                        }
-                        case (byte)WindowEventID.Close:
-                        {
-                            break;
-                        }
-                        case (byte)WindowEventID.TakeFocus:
-                        {
-                            _sdl.SetWindowInputFocus(_sdl.GetWindowFromID(ev.Window.WindowID));
-                            break;
-                        }
-                    }
+                _clickDetected = true;
+                _clickX = ev.Button.X;
+                _clickY = ev.Button.Y;
+            }
 
-                    break;
-                }
-
-                case (uint)EventType.Fingermotion:
-                {
-                    break;
-                }
-
-                case (uint)EventType.Mousemotion:
-                {
-                    break;
-                }
-
-                case (uint)EventType.Fingerdown:
-                {
-                    mouseButtonStates[(byte)MouseButton.Primary] = 1;
-                    break;
-                }
-                case (uint)EventType.Mousebuttondown:
-                {
-                    mouseButtonStates[ev.Button.Button] = 1;
-                    break;
-                }
-
-                case (uint)EventType.Fingerup:
-                {
-                    mouseButtonStates[(byte)MouseButton.Primary] = 0;
-                    break;
-                }
-
-                case (uint)EventType.Mousebuttonup:
-                {
-                    mouseButtonStates[ev.Button.Button] = 0;
-                    break;
-                }
-
-                case (uint)EventType.Mousewheel:
-                {
-                    break;
-                }
-
-                case (uint)EventType.Keyup:
-                {
-                    break;
-                }
-
-                case (uint)EventType.Keydown:
-                {
-                    break;
-                }
+            if (ev.Type == (uint)EventType.Windowevent &&
+                ev.Window.Event == (byte)WindowEventID.TakeFocus)
+            {
+                _sdl.SetWindowInputFocus(_sdl.GetWindowFromID(ev.Window.WindowID));
             }
         }
 
@@ -147,14 +55,10 @@ public unsafe class InputLogic
 
     public (bool clicked, int x, int y) GetMouseClick()
     {
-        Event ev = new Event();
-        while (_sdl.PollEvent(ref ev) != 0)
+        if (_clickDetected)
         {
-            if (ev.Type == (uint)EventType.Mousebuttondown &&
-                ev.Button.Button == (byte)MouseButton.Primary)
-            {
-                return (true, ev.Button.X, ev.Button.Y);
-            }
+            _clickDetected = false;
+            return (true, _clickX, _clickY);
         }
 
         return (false, 0, 0);
